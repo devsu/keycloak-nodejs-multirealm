@@ -1,0 +1,6 @@
+{
+  "server-url" : "http://localhost:9090/auth",
+  "bearer-only": true,
+  "ssl-required": "external",
+  "resource": "my-node-app2"
+}

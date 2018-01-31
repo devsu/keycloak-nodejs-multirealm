@@ -2,6 +2,8 @@ const Keycloak = require('keycloak-connect');
 const NodeCache = require('node-cache');
 const composable = require('composable-middleware');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
 
 const Setup = require('../node_modules/keycloak-connect/middleware/setup');
 const Admin = require('../node_modules/keycloak-connect/middleware/admin');
@@ -19,18 +21,22 @@ const defaultOptions = {
 
 module.exports = class {
   constructor(config, keycloakConfig) {
+    if (!config) {
+      throw new Error('Adapter configuration must be provided.');
+    }
     this.config = config;
-    this.keycloakConfig = keycloakConfig;
+    this.keycloakConfig = this._getKeycloakConfig(keycloakConfig);
   }
 
   middleware(customOptions) {
     const options = Object.assign({}, defaultOptions, customOptions);
     return (req, res, next) => {
-      let realm = this.getRealmName(req);
+      const realm = this.getRealmName(req);
       if (!realm) {
         return next();
       }
-      let keycloakObject = this._getKeycloakObject(realm);
+      const keycloakObject = this.getKeycloakObjectForRealm(realm);
+      /* eslint-disable new-cap */
       const middleware = composable(
         Setup,
         PostAuth(keycloakObject),
@@ -38,13 +44,27 @@ module.exports = class {
         GrantAttacher(keycloakObject),
         Logout(keycloakObject, options.logout),
       );
+      /* eslint-enable new-cap */
       middleware(req, res, next);
+    };
+  }
+
+  protect(spec) {
+    return (req, res, next) => {
+      const realm = this.getRealmName(req);
+      if (!realm) {
+        return this.accessDenied(req, res);
+      }
+      const keycloakObject = this.getKeycloakObjectForRealm(realm);
+      // eslint-disable-next-line new-cap
+      Protect(keycloakObject, spec)(req, res, next);
     };
   }
 
   getRealmName(req) {
     const token = this._decodeTokenString(this._getTokenStringFromRequest(req));
-    if (token && token.payload && token.payload.iss && token.payload.iss.startsWith(this.keycloakConfig['auth-server-url'])) {
+    if (token && token.payload && token.payload.iss &&
+      token.payload.iss.startsWith(this.keycloakConfig['auth-server-url'])) {
       return this.getRealmNameFromToken(token);
     }
     return this.getRealmNameFromRequest(req);
@@ -59,19 +79,23 @@ module.exports = class {
    *
    * It will be called when the request doesn't have a valid token.
    *
-   * By default it's empty, so it must be implemented by the user for admin and logout endpoints to work.
+   * By default it's empty, so it must be implemented by the user.
+   * If not implemented, the admin and logout endpoints won't work.
    *
    * @param {Object} request The HTTP request.
    */
+  // eslint-disable-next-line no-unused-vars
   getRealmNameFromRequest(req) {
     // should be implemented by user
   }
 
-  protect() {
-
-  }
-
-  _getKeycloakObject(realm) {
+  /**
+   * It creates a (or returns a cached) keycloak object for the given realm.
+   *
+   * @param {string} realm The realm name
+   * @returns {Object} The keycloak object
+   */
+  getKeycloakObjectForRealm(realm) {
     let keycloakObject = cache.get(realm);
     if (keycloakObject) {
       return keycloakObject;
@@ -80,6 +104,31 @@ module.exports = class {
     keycloakObject = new Keycloak(this.config, keycloakConfig);
     cache.set(realm, keycloakObject);
     return keycloakObject;
+  }
+
+  /**
+   * Replaceable function to handle access-denied responses.
+   *
+   * In the event the Keycloak middleware decides a user may
+   * not access a resource, or has failed to authenticate at all,
+   * this function will be called.
+   *
+   * By default, a simple string of "Access denied" along with
+   * an HTTP status code for 403 is returned.  Chances are an
+   * application would prefer to render a fancy template.
+   */
+  accessDenied(req, res) {
+    res.status(403).send('Access Denied');
+  }
+
+  _getKeycloakConfig(keycloakConfig) {
+    if (typeof keycloakConfig === 'string') {
+      return JSON.parse(fs.readFileSync(keycloakConfig));
+    }
+    if (keycloakConfig) {
+      return keycloakConfig;
+    }
+    return JSON.parse(fs.readFileSync(path.join(process.cwd(), 'keycloak.json')));
   }
 
   _decodeTokenString(tokenString) {

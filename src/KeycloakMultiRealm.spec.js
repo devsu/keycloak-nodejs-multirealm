@@ -19,15 +19,18 @@ const Protect = require('../node_modules/keycloak-connect/middleware/protect');
 
 const KeycloakMultiRealm = require('./KeycloakMultiRealm');
 
+const keycloakJsonFile = require('../keycloak');
+const anotherKeycloakJsonFile = require('../another-keycloak');
+
 describe('KeycloakMultiRealm', () => {
   let keycloakMultiRealm, config, keycloakConfig, req, res, next, userId, keycloakMock, cache, composedMiddleware,
-    postAuthMiddleware, adminMiddleware, logoutMiddleware, grantAttacherMiddleware, protectMiddleware, options;
+    postAuthMiddleware, adminMiddleware, logoutMiddleware, grantAttacherMiddleware, protectMiddleware;
 
+  // eslint-disable-next-line max-statements
   beforeEach(() => {
-    options = {};
     config = {};
     keycloakConfig = {
-      'auth-server-url': "http://localhost:8080/auth",
+      'auth-server-url': 'http://localhost:8080/auth',
       'bearer-only': true,
       'ssl-required': 'external',
       'resource': 'my-node-app',
@@ -47,6 +50,7 @@ describe('KeycloakMultiRealm', () => {
     keycloakMock = new Keycloak();
     keycloakMock.constructorCount = 0;
     delete keycloakMock.constructorArguments;
+
     keycloakMultiRealm = new KeycloakMultiRealm(config, keycloakConfig);
 
     cache = new NodeCache();
@@ -81,6 +85,36 @@ describe('KeycloakMultiRealm', () => {
     Protect.mockClear();
   });
 
+  describe('constructor', () => {
+    describe('when no config provided', () => {
+      it('should fail (just to maintain consistency with the official module behavior)', () => {
+        expect(() => {
+          keycloakMultiRealm = new KeycloakMultiRealm(null, keycloakConfig);
+        }).toThrow('Adapter configuration must be provided.');
+      });
+    });
+
+    describe('when no keycloakConfig provided', () => {
+      beforeEach(() => {
+        keycloakMultiRealm = new KeycloakMultiRealm(config);
+      });
+
+      it('should read config from keycloak.json', () => {
+        expect(keycloakMultiRealm.keycloakConfig).toEqual(keycloakJsonFile);
+      });
+    });
+
+    describe('keycloakConfig is a path string', () => {
+      beforeEach(() => {
+        keycloakMultiRealm = new KeycloakMultiRealm(config, 'another-keycloak.json');
+      });
+
+      it('should get config from the given path', () => {
+        expect(keycloakMultiRealm.keycloakConfig).toEqual(anotherKeycloakJsonFile);
+      });
+    });
+  });
+
   describe('middleware()', () => {
     it('should return a middleware function', () => {
       expect(keycloakMultiRealm.middleware()).toEqual(expect.any(Function));
@@ -90,8 +124,6 @@ describe('KeycloakMultiRealm', () => {
       let middleware;
 
       beforeEach(() => {
-        keycloakMultiRealm.getRealmNameFromRequest = jest.fn().mockReturnValue('master');
-        keycloakMultiRealm.getRealmNameFromToken = jest.fn();
         middleware = keycloakMultiRealm.middleware();
       });
 
@@ -104,7 +136,7 @@ describe('KeycloakMultiRealm', () => {
 
         describe('no realm found', () => {
           beforeEach(() => {
-            keycloakMultiRealm.getRealmNameFromRequest = jest.fn().mockReturnValue(null);
+            keycloakMultiRealm.getRealmNameFromRequest = jest.fn().mockReturnValue();
           });
 
           it('should not set req.kauth object', () => {
@@ -114,7 +146,7 @@ describe('KeycloakMultiRealm', () => {
         });
 
         describe('realm found', () => {
-          const realm = 'master';
+          const realm = 'devsu';
 
           beforeEach(() => {
             keycloakMultiRealm.getRealmNameFromRequest = jest.fn().mockReturnValue(realm);
@@ -152,7 +184,9 @@ describe('KeycloakMultiRealm', () => {
           it('should call keycloak middleware', () => {
             middleware(req, res, next);
             expect(composable).toHaveBeenCalledTimes(1);
-            expect(composable).toHaveBeenCalledWith(Setup, postAuthMiddleware, adminMiddleware, grantAttacherMiddleware, logoutMiddleware);
+            expect(composable).toHaveBeenCalledWith(
+              Setup, postAuthMiddleware, adminMiddleware, grantAttacherMiddleware, logoutMiddleware
+            );
             expect(composedMiddleware).toHaveBeenCalledTimes(1);
             expect(composedMiddleware).toHaveBeenCalledWith(req, res, next);
           });
@@ -197,18 +231,21 @@ describe('KeycloakMultiRealm', () => {
         });
       };
 
-      const runCommonTestsForRequestsWithoutOrWithInvalidToken = () => {
+      const runCommonTestsForRequestsWithoutTokenOrWithInvalidToken = () => {
         it('should try to get the realm name using the getRealmNameFromRequest() method', () => {
+          keycloakMultiRealm.getRealmNameFromRequest = jest.fn().mockReturnValue();
+          keycloakMultiRealm.getRealmNameFromToken = jest.fn();
           middleware(req, res, next);
           expect(keycloakMultiRealm.getRealmNameFromRequest).toHaveBeenCalledTimes(1);
           expect(keycloakMultiRealm.getRealmNameFromRequest).toHaveBeenCalledWith(req);
           expect(keycloakMultiRealm.getRealmNameFromToken).not.toHaveBeenCalled();
-
         });
       };
 
       const runCommonTestsForRequestWithValidToken = () => {
         it('should try to get the realm name using the getRealmNameFromToken() method', () => {
+          keycloakMultiRealm.getRealmNameFromRequest = jest.fn().mockReturnValue();
+          keycloakMultiRealm.getRealmNameFromToken = jest.fn();
           middleware(req, res, next);
           expect(keycloakMultiRealm.getRealmNameFromToken).toHaveBeenCalledTimes(1);
           expect(keycloakMultiRealm.getRealmNameFromRequest).not.toHaveBeenCalled();
@@ -216,12 +253,8 @@ describe('KeycloakMultiRealm', () => {
       };
 
       describe('without token', () => {
-        beforeEach(() => {
-          delete res.authorization;
-        });
-
         runCommonTests();
-        runCommonTestsForRequestsWithoutOrWithInvalidToken();
+        runCommonTestsForRequestsWithoutTokenOrWithInvalidToken();
       });
 
       describe('with invalid token', () => {
@@ -239,7 +272,7 @@ describe('KeycloakMultiRealm', () => {
             req.headers.Authorization = authorization;
           });
 
-          runCommonTestsForRequestsWithoutOrWithInvalidToken();
+          runCommonTestsForRequestsWithoutTokenOrWithInvalidToken();
           runCommonTests();
         });
 
@@ -257,13 +290,13 @@ describe('KeycloakMultiRealm', () => {
             req.headers.Authorization = authorization;
           });
 
-          runCommonTestsForRequestsWithoutOrWithInvalidToken();
+          runCommonTestsForRequestsWithoutTokenOrWithInvalidToken();
           runCommonTests();
         });
       });
 
       describe('with valid token', () => {
-        let serverUrl, payload, token, realm, iss, decodedToken;
+        let serverUrl, payload, token, realm, iss;
 
         beforeEach(() => {
           serverUrl = 'http://localhost:8080/auth';
@@ -274,8 +307,6 @@ describe('KeycloakMultiRealm', () => {
             'iss': iss,
           };
           token = jwt.sign(payload, 'secret!');
-          decodedToken = jwt.decode(token, {'complete': true});
-          keycloakMultiRealm.getRealmNameFromToken = jest.fn().mockReturnValue('master');
         });
 
         describe('with bearer prefix', () => {
@@ -315,6 +346,135 @@ describe('KeycloakMultiRealm', () => {
   describe('getRealmNameFromRequest()', () => {
     it('should return undefined (user should provide implementation)', () => {
       expect(keycloakMultiRealm.getRealmNameFromRequest({})).toBeUndefined();
+    });
+  });
+
+  describe('protect()', () => {
+    it('should return a function', () => {
+      expect(keycloakMultiRealm.protect()).toEqual(expect.any(Function));
+    });
+
+    describe('protect middleware function', () => {
+      let protect, spec;
+
+      beforeEach(() => {
+        spec = 'whatever';
+        protect = keycloakMultiRealm.protect(spec);
+      });
+
+      const runCommonTestsForRequestWithoutTokenOrWithInvalidToken = () => {
+        beforeEach(() => {
+          keycloakMultiRealm.accessDenied = jest.fn();
+        });
+
+        it('should call accessDenied method', () => {
+          protect(req, res, next);
+          expect(keycloakMultiRealm.accessDenied).toHaveBeenCalledTimes(1);
+          expect(keycloakMultiRealm.accessDenied).toHaveBeenCalledWith(req, res);
+        });
+
+        it('should not call Protect method', () => {
+          protect(req, res, next);
+          expect(Protect).not.toHaveBeenCalled();
+        });
+
+        it('should not call next', () => {
+          protect(req, res, next);
+          expect(next).not.toHaveBeenCalled();
+        });
+      };
+
+      const runCommonTestsForRequestsWithValidToken = () => {
+        it('should call the protect method on the corresponding keycloak object, with the right arguments', () => {
+          protect(req, res, next);
+          expect(Protect).toHaveBeenCalledTimes(1);
+          expect(Protect).toHaveBeenCalledWith(keycloakMock, spec);
+          expect(protectMiddleware).toHaveBeenCalledTimes(1);
+          expect(protectMiddleware).toHaveBeenCalledWith(req, res, next);
+        });
+      };
+
+      describe('without token', () => {
+        runCommonTestsForRequestWithoutTokenOrWithInvalidToken();
+      });
+
+      describe('with invalid token', () => {
+        describe('invalid iss', () => {
+          let invalidIss;
+
+          beforeEach(() => {
+            invalidIss = 'http://invalid.iss/auth/realms/anyRealm';
+            const payload = {
+              'sub': userId,
+              'iss': invalidIss,
+            };
+            const token = jwt.sign(payload, 'secret!');
+            const authorization = `Bearer ${token}`;
+            req.headers.Authorization = authorization;
+          });
+
+          runCommonTestsForRequestWithoutTokenOrWithInvalidToken();
+        });
+
+        describe('invalid iss - 2', () => {
+          let invalidIss;
+
+          beforeEach(() => {
+            invalidIss = 'http://invalid.iss/auth/realms/anyRealm?securityHole=http://auth.sm.localhost/auth';
+            const payload = {
+              'sub': userId,
+              'iss': invalidIss,
+            };
+            const token = jwt.sign(payload, 'secret!');
+            const authorization = `Bearer ${token}`;
+            req.headers.Authorization = authorization;
+          });
+
+          runCommonTestsForRequestWithoutTokenOrWithInvalidToken();
+        });
+      });
+
+      describe('with valid token', () => {
+        let serverUrl, payload, token, realm, iss;
+
+        beforeEach(() => {
+          serverUrl = 'http://localhost:8080/auth';
+          realm = 'devsu';
+          iss = `${serverUrl}/auth/realms/${realm}`;
+          payload = {
+            'sub': userId,
+            'iss': iss,
+          };
+          token = jwt.sign(payload, 'secret!');
+        });
+
+        describe('with bearer prefix', () => {
+          beforeEach(() => {
+            const authorization = `Bearer ${token}`;
+            req.headers.Authorization = authorization;
+          });
+
+          runCommonTestsForRequestsWithValidToken();
+        });
+
+        describe('without bearer prefix', () => {
+          beforeEach(() => {
+            req.headers.Authorization = token;
+          });
+
+          runCommonTestsForRequestsWithValidToken();
+        });
+      });
+    });
+  });
+
+  describe('accessDenied()', () => {
+    it('should return 403 with "access denied" message', () => {
+      keycloakMultiRealm.accessDenied(req, res);
+      expect(res.status).toHaveBeenCalledTimes(1);
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.send).toHaveBeenCalledTimes(1);
+      expect(res.send).toHaveBeenCalledWith('Access Denied');
     });
   });
 });

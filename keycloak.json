@@ -1,0 +1,6 @@
+{
+  "server-url" : "http://localhost:8080/auth",
+  "bearer-only": true,
+  "ssl-required": "all",
+  "resource": "my-node-app1"
+}

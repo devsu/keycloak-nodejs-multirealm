@@ -1,4 +1,6 @@
-const myKeycloak = {};
+const myKeycloak = {
+  'accessDenied': jest.fn(),
+};
 
 class Keycloak {
   constructor() {
