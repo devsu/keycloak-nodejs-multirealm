@@ -1,5 +1,5 @@
 {
-  "name": "keycloak-nodejs-multirealm",
+  "name": "keycloak-connect-multirealm",
   "version": "1.0.0",
   "description": "Keycloak Node.js Adapter With Support for multiple realms",
   "main": "index.js",
@@ -37,7 +37,6 @@
     "eslint": "^4.16.0",
     "eslint-config-devsu": "^0.0.3",
     "jest": "^22.1.4",
-    "jsonwebtoken": "^8.1.1",
     "nsp": "^3.1.0"
   },
   "coverageThreshold": {
@@ -55,6 +54,7 @@
   "dependencies": {
     "composable-middleware": "^0.3.0",
     "keycloak-connect": "^3.4.3",
+    "jsonwebtoken": "^8.1.1",
     "node-cache": "^4.1.1"
   }
 }
