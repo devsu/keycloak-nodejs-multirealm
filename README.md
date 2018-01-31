@@ -75,6 +75,8 @@ If the request doesn't contain a valid token, it tries to get the realm name fro
 
 Then, based on the realm name, uses under the hood the official keycloak-connect module.
 
+When found, this middleware adds the realm name to the request: `req.kauth.realm`.
+
 ## Status
 
 Tested on bearer-only applications. If `getRealmNameFromRequest` is properly implemented, it *should* work for public clients as well, but I haven't tested it.

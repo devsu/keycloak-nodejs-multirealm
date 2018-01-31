@@ -3,14 +3,12 @@ const jwt = require('jsonwebtoken');
 const NodeCache = require('node-cache');
 const composable = require('composable-middleware');
 
-jest.mock('../node_modules/keycloak-connect/middleware/setup');
 jest.mock('../node_modules/keycloak-connect/middleware/admin');
 jest.mock('../node_modules/keycloak-connect/middleware/logout');
 jest.mock('../node_modules/keycloak-connect/middleware/post-auth');
 jest.mock('../node_modules/keycloak-connect/middleware/grant-attacher');
 jest.mock('../node_modules/keycloak-connect/middleware/protect');
 
-const Setup = require('../node_modules/keycloak-connect/middleware/setup');
 const Admin = require('../node_modules/keycloak-connect/middleware/admin');
 const Logout = require('../node_modules/keycloak-connect/middleware/logout');
 const PostAuth = require('../node_modules/keycloak-connect/middleware/post-auth');
@@ -61,8 +59,6 @@ describe('KeycloakMultiRealm', () => {
     composedMiddleware = composable();
     composable.mockClear();
     composedMiddleware.mockClear();
-
-    Setup.mockClear();
 
     postAuthMiddleware = jest.fn();
     PostAuth.mockReturnValue(postAuthMiddleware);
@@ -137,6 +133,7 @@ describe('KeycloakMultiRealm', () => {
         describe('no realm found', () => {
           beforeEach(() => {
             keycloakMultiRealm.getRealmNameFromRequest = jest.fn().mockReturnValue();
+            keycloakMultiRealm.getRealmNameFromToken = jest.fn().mockReturnValue();
           });
 
           it('should not set req.kauth object', () => {
@@ -163,6 +160,12 @@ describe('KeycloakMultiRealm', () => {
               expect(cache.set).toHaveBeenCalledTimes(1);
               expect(cache.set).toHaveBeenCalledWith(realm, keycloakMock);
             });
+
+            it('should add the authenticated and deauthenticated callbacks to the keycloak object', () => {
+              middleware(req, res, next);
+              expect(keycloakMock.authenticated).toBe(keycloakMultiRealm.authenticated);
+              expect(keycloakMock.deauthenticated).toBe(keycloakMultiRealm.deauthenticated);
+            });
           });
 
           describe('when keycloakObject cached', () => {
@@ -185,7 +188,7 @@ describe('KeycloakMultiRealm', () => {
             middleware(req, res, next);
             expect(composable).toHaveBeenCalledTimes(1);
             expect(composable).toHaveBeenCalledWith(
-              Setup, postAuthMiddleware, adminMiddleware, grantAttacherMiddleware, logoutMiddleware
+              postAuthMiddleware, adminMiddleware, grantAttacherMiddleware, logoutMiddleware
             );
             expect(composedMiddleware).toHaveBeenCalledTimes(1);
             expect(composedMiddleware).toHaveBeenCalledWith(req, res, next);
@@ -227,6 +230,11 @@ describe('KeycloakMultiRealm', () => {
               expect(Admin).toHaveBeenCalledWith(keycloakMock, '/');
               expect(Logout).toHaveBeenCalledWith(keycloakMock, '/cat');
             });
+          });
+
+          it('should set kauth.realm with the realm name', () => {
+            middleware(req, res, next);
+            expect(req.kauth.realm).toEqual(realm);
           });
         });
       };

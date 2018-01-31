@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs');
 
-const Setup = require('../node_modules/keycloak-connect/middleware/setup');
 const Admin = require('../node_modules/keycloak-connect/middleware/admin');
 const Logout = require('../node_modules/keycloak-connect/middleware/logout');
 const PostAuth = require('../node_modules/keycloak-connect/middleware/post-auth');
@@ -35,10 +34,10 @@ module.exports = class {
       if (!realm) {
         return next();
       }
+      req.kauth = {realm};
       const keycloakObject = this.getKeycloakObjectForRealm(realm);
       /* eslint-disable new-cap */
       const middleware = composable(
-        Setup,
         PostAuth(keycloakObject),
         Admin(keycloakObject, options.admin),
         GrantAttacher(keycloakObject),
@@ -102,6 +101,8 @@ module.exports = class {
     }
     const keycloakConfig = Object.assign({}, this.keycloakConfig, {realm});
     keycloakObject = new Keycloak(this.config, keycloakConfig);
+    keycloakObject.authenticated = this.authenticated;
+    keycloakObject.deauthenticated = this.deauthenticated;
     cache.set(realm, keycloakObject);
     return keycloakObject;
   }
@@ -119,6 +120,42 @@ module.exports = class {
    */
   accessDenied(req, res) {
     res.status(403).send('Access Denied');
+  }
+
+  /**
+   * Callback made upon successful authentication of a user.
+   *
+   * By default, this a no-op, but may assigned to another
+   * function for application-specific login which may be useful
+   * for linking authentication information from Keycloak to
+   * application-maintained user information.
+   *
+   * The `request.kauth.grant` object contains the relevant tokens
+   * which may be inspected.
+   *
+   * For instance, to obtain the unique subject ID:
+   *
+   *     request.kauth.grant.id_token.sub => bf2056df-3803-4e49-b3ba-ff2b07d86995
+   *
+   * @param {Object} request The HTTP request.
+   */
+  // eslint-disable-next-line no-unused-vars
+  authenticated(req) {
+    // no-op
+  }
+
+  /**
+   * Callback made upon successful de-authentication of a user.
+   *
+   * By default, this is a no-op, but may be used by the application
+   * in the case it needs to remove information from the user's session
+   * or otherwise perform additional logic once a user is logged out.
+   *
+   * @param {Object} request The HTTP request.
+   */
+  // eslint-disable-next-line no-unused-vars
+  deauthenticated(req) {
+    // no-op
   }
 
   _getKeycloakConfig(keycloakConfig) {
