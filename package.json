@@ -1,6 +1,6 @@
 {
   "name": "keycloak-connect-multirealm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Keycloak Node.js Adapter With Support for multiple realms",
   "main": "index.js",
   "scripts": {
