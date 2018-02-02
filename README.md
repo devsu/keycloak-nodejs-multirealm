@@ -4,6 +4,16 @@ Express Middleware that allows authentication / authorization using [Keycloak](h
 
 Uses the official [Keycloak Node.js Adapter](https://github.com/keycloak/keycloak-nodejs-connect) under the hood.
 
+## Installation
+
+`npm install keycloak-connect keycloak-connect-multirealm`
+
+or
+
+`yarn add keycloak-connect keycloak-connect-multirealm`
+
+Starting from version 1.1.0, `keycloak-connect` is required as a peer dependency. That way you can update `keycloak-connect` module independently from this module.
+
 ## Usage
 
 The usage is very similar to the official module:
