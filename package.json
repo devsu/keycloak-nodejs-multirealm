@@ -1,6 +1,6 @@
 {
   "name": "keycloak-connect-multirealm",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Keycloak Node.js Adapter With Support for multiple realms",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "lint": "eslint .",
     "lint-fix": "eslint --fix .",
     "posttest": "yarn run lint && nsp check",
-    "coverage": "jest --coverage && npm run posttest",
+    "coverage": "jest --covera ge && npm run posttest",
     "prepush": "yarn run coverage"
   },
   "repository": {
