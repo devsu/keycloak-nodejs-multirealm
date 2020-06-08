@@ -51,7 +51,7 @@ describe('KeycloakMultiRealm', () => {
 
     keycloakMultiRealm = new KeycloakMultiRealm(config, keycloakConfig);
 
-    cache = new NodeCache();
+    cache = new NodeCache({'useClones': false});
     cache.get = jest.fn();
     cache.get.mockClear();
     cache.set.mockClear();

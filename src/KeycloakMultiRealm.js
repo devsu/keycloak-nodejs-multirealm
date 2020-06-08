@@ -11,7 +11,14 @@ const PostAuth = require(path.join(process.cwd(), './node_modules/keycloak-conne
 const GrantAttacher = require(path.join(process.cwd(), './node_modules/keycloak-connect/middleware/grant-attacher'));
 const Protect = require(path.join(process.cwd(), './node_modules/keycloak-connect/middleware/protect'));
 
-const cache = new NodeCache();
+/**
+ * We do not use clones because NodeCache throws exception
+ * if the Keycloak is initiated with a non memory store(like redis-store).
+ * Whenever keycloak is initialised with redis-store, the keycloak object contains
+ * some deeply nested http connection objects, NodeCache fails because clone fails,
+ * hence useClones is set to false.
+ */
+const cache = new NodeCache({'useClones': false});
 
 const defaultOptions = {
   'admin': '/',
