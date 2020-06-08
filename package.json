@@ -7,8 +7,8 @@
     "test": "jest",
     "lint": "eslint .",
     "lint-fix": "eslint --fix .",
-    "posttest": "yarn run lint && nsp check",
-    "coverage": "jest --covera ge && npm run posttest",
+    "posttest": "yarn run lint",
+    "coverage": "jest --coverage && npm run posttest",
     "prepush": "yarn run coverage"
   },
   "repository": {
@@ -37,8 +37,7 @@
     "eslint": "^4.16.0",
     "eslint-config-devsu": "^0.0.3",
     "jest": "^22.1.4",
-    "keycloak-connect": "^3.4.3",
-    "nsp": "^3.1.0"
+    "keycloak-connect": "^3.4.3"
   },
   "coverageThreshold": {
     "global": {
@@ -59,5 +58,8 @@
   },
   "peerDependencies": {
     "keycloak-connect": "3.x"
+  },
+  "jest": {
+    "testEnvironment": "node"
   }
 }
