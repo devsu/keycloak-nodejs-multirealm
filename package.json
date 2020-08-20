@@ -37,7 +37,7 @@
     "eslint": "^4.16.0",
     "eslint-config-devsu": "^0.0.3",
     "jest": "^22.1.4",
-    "keycloak-connect": "^3.4.3"
+    "keycloak-connect": "^4.8.3"
   },
   "coverageThreshold": {
     "global": {
