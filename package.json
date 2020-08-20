@@ -1,6 +1,6 @@
 {
   "name": "keycloak-connect-multirealm",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Keycloak Node.js Adapter With Support for multiple realms",
   "main": "index.js",
   "scripts": {
@@ -34,10 +34,10 @@
   },
   "homepage": "https://github.com/devsu/keycloak-nodejs-multirealm#readme",
   "devDependencies": {
-    "eslint": "^4.16.0",
+    "eslint": "^7.7.0",
     "eslint-config-devsu": "^0.0.3",
-    "jest": "^22.1.4",
-    "keycloak-connect": "^3.4.3"
+    "jest": "^26.4.1",
+    "keycloak-connect": "^11.0.0"
   },
   "coverageThreshold": {
     "global": {
@@ -53,11 +53,11 @@
   ],
   "dependencies": {
     "composable-middleware": "^0.3.0",
-    "jsonwebtoken": "^8.1.1",
-    "node-cache": "^4.1.1"
+    "jsonwebtoken": "^8.5.1",
+    "node-cache": "^5.1.2"
   },
   "peerDependencies": {
-    "keycloak-connect": "3.x"
+    "keycloak-connect": "11.x"
   },
   "jest": {
     "testEnvironment": "node"

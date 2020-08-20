@@ -27,7 +27,7 @@ const app = express();
 
 const config = {};
 
-keycloakConfig = {
+const keycloakConfig = {
   'auth-server-url': 'http://localhost:8080/auth',
   'bearer-only': true,
   'ssl-required': 'external',

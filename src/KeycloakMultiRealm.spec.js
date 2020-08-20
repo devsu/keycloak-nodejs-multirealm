@@ -188,7 +188,7 @@ describe('KeycloakMultiRealm', () => {
             middleware(req, res, next);
             expect(composable).toHaveBeenCalledTimes(1);
             expect(composable).toHaveBeenCalledWith(
-              postAuthMiddleware, adminMiddleware, grantAttacherMiddleware, logoutMiddleware
+              postAuthMiddleware, adminMiddleware, grantAttacherMiddleware, logoutMiddleware,
             );
             expect(composedMiddleware).toHaveBeenCalledTimes(1);
             expect(composedMiddleware).toHaveBeenCalledWith(req, res, next);
