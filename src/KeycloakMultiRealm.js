@@ -110,6 +110,7 @@ module.exports = class {
     keycloakObject = new Keycloak(this.config, keycloakConfig);
     keycloakObject.authenticated = this.authenticated;
     keycloakObject.deauthenticated = this.deauthenticated;
+    keycloakObject.accessDenied = this.accessDenied;
     cache.set(realm, keycloakObject);
     return keycloakObject;
   }
