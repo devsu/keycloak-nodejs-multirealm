@@ -53,7 +53,7 @@
   ],
   "dependencies": {
     "composable-middleware": "^0.3.0",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "node-cache": "^5.1.2"
   },
   "peerDependencies": {
